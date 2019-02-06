@@ -1,5 +1,5 @@
 import torch.nn as nn
-
+import torch.nn.utils.rnn as rnn_utils
 
 class HandRNN(nn.Module):
     def __init__(self,
@@ -25,10 +25,12 @@ class HandRNN(nn.Module):
         # Normalise output to probability
         self.out = nn.Sigmoid()
 
-    def forward(self, x, device):
-
-        o, (_, _) = self.lstm(x)
+    def forward(self, x, lengths, device):
+        px = rnn_utils.pack_padded_sequence(x, lengths, batch_first=True)
+        o, (_, _) = self.lstm(px)
+        o, _ = rnn_utils.pad_packed_sequence(o, batch_first=True)
         # Assume only one event
         y1 = self.pred(o)
         y = self.out(y1)
+
         return y

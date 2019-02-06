@@ -1,4 +1,4 @@
-import hand_rnn as hand_rnn
+import hand_rnn as handrnn
 import pandas as pd
 import torch
 import pickle
@@ -26,17 +26,19 @@ betas = (0.9, 0.999)
 # Regularisation
 weight_decay = 0.0001
 
-(input_tensors, events_tensors)\
+(input_tensors, events_tensors, lengths)\
    = pickle.load(open(f"data/tensors.pkl", "rb"))
 
 # split into two files
 
-ds = data.TensorDataset(input_tensors.to(device), events_tensors.to(device))
+ds = data.TensorDataset(input_tensors.to(device),
+                        events_tensors.to(device),
+                        lengths.to(device))
 dataloader_ = data.DataLoader(ds,
                               batch_size=batch_size,
                               shuffle=True)
 
-hand_rnn = hand_rnn.HandRNN()
+hand_rnn = handrnn.HandRNN()
 
 hand_rnn.to(device)
 
@@ -51,8 +53,9 @@ for e in range(epochs):
 # Transfer the tensors to the GPU
     for i_batch, ts_ in enumerate(dataloader_):
         optimizer.zero_grad()
-        y = hand_rnn(ts_[0], device=device)
-        loss = criterion(y, ts_[1])
+        y = hand_rnn(ts_[0], ts_[2], device=device)
+        batch_len = y.shape[1]
+        loss = criterion(y, ts_[1][:, :batch_len, :])
         print("Epoch: " + str(e) + " Batch: " + str(i_batch)
               + " Traning loss: " + str(loss.item()))
         loss.backward()
