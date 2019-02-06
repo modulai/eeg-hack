@@ -6,12 +6,15 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as data
 
-# TODO: fix gpu code
 
-#torch.cuda.set_device(0)
-device = torch.device("cpu")
-#torch.backends.cudnn.benchmark = True
+use_cuda = torch.cuda.is_available()
 
+if use_cuda:
+    torch.cuda.set_device(0)
+    device = torch.device("cuda:0")
+    torch.backends.cudnn.benchmark = True
+else:
+    device = torch.device("cpu")
 
 batch_size = 1
 epochs = 100
@@ -28,12 +31,14 @@ weight_decay = 0.0001
 
 # split into two files
 
-ds = data.TensorDataset(input_tensors, events_tensors)
+ds = data.TensorDataset(input_tensors.to(device), events_tensors.to(device))
 dataloader_ = data.DataLoader(ds,
                               batch_size=batch_size,
                               shuffle=True)
 
 hand_rnn = hand_rnn.HandRNN()
+
+hand_rnn.to(device)
 
 optimizer = optim.Adam(hand_rnn.parameters(), amsgrad=True,
                        lr=lr,
@@ -49,6 +54,8 @@ for e in range(epochs):
         y = hand_rnn(ts_[0], device=device)
         loss = criterion(y, ts_[1])
         print("Epoch: " + str(e) + " Batch: " + str(i_batch)
-              + " Loss: " + str(loss.item()))
+              + " Traning loss: " + str(loss.item()))
         loss.backward()
         optimizer.step()
+
+torch.save(hand_rnn, "data/hand_model.torch")

@@ -1,6 +1,4 @@
-import torch
 import torch.nn as nn
-import numpy as np
 
 
 class HandRNN(nn.Module):
@@ -23,8 +21,8 @@ class HandRNN(nn.Module):
 
         # Prediction layer
         self.pred = nn.Linear(self.hidden_size, self.events)
-        # I am doing sigmoid even though multiple
-        # events at the same is possible
+
+        # Normalise output to probability
         self.out = nn.Sigmoid()
 
     def forward(self, x, device):
