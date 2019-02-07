@@ -17,7 +17,7 @@ else:
     device = torch.device("cpu")
 
 batch_size = 1
-epochs = 100
+epochs = 1
 
 # Learning rate
 lr = 0.001
@@ -38,7 +38,8 @@ dataloader_ = data.DataLoader(ds,
                               batch_size=batch_size,
                               shuffle=True)
 
-hand_rnn = handrnn.HandRNN()
+
+hand_rnn = handrnn.HandRNN((input_tensors[:10], lengths[:10]))
 
 hand_rnn.to(device)
 
@@ -49,16 +50,18 @@ optimizer = optim.Adam(hand_rnn.parameters(), amsgrad=True,
 
 criterion = nn.MSELoss()
 
+tr = torch.jit.trace(hand_rnn, (input_tensors[:10], lengths[:10]))
+
 for e in range(epochs):
 # Transfer the tensors to the GPU
     for i_batch, ts_ in enumerate(dataloader_):
         optimizer.zero_grad()
-        y = hand_rnn(ts_[0], ts_[2], device=device)
+        y = tr(ts_[0], ts_[2])
         batch_len = y.shape[1]
         loss = criterion(y, ts_[1][:, :batch_len, :])
         print("Epoch: " + str(e) + " Batch: " + str(i_batch)
               + " Traning loss: " + str(loss.item()))
         loss.backward()
         optimizer.step()
-
+        # 
 torch.save(hand_rnn, "data/hand_model.torch")

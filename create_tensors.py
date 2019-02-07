@@ -36,5 +36,7 @@ input_tensors = rnn_utils.pad_sequence(input_tensors, batch_first=True)
 events_tensors = rnn_utils.pad_sequence(events_tensors, batch_first=True)
 lengths = torch.Tensor(lengths)
 
+lengths, index = torch.sort(lengths, descending=True)
+
 with open(f"data/tensors.pkl", "wb") as f:
-    pickle.dump((input_tensors, events_tensors, lengths), f)
+    pickle.dump((input_tensors[index], events_tensors[index], lengths), f)
